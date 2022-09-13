@@ -841,6 +841,24 @@ typedef uintptr_t PuglNativeView;
 /// Handle for a view's opaque user data
 typedef void* PuglHandle;
 
+/// A type of view
+typedef enum {
+  PUGL_DESKTOP_VIEW,
+  PUGL_DOCK_VIEW,
+  PUGL_TOOLBAR_VIEW,
+  PUGL_MENU_VIEW,
+  PUGL_UTILITY_VIEW,
+  PUGL_SPLASH_VIEW,
+  PUGL_DIALOG_VIEW,
+  PUGL_DROPDOWN_MENU_VIEW,
+  PUGL_POPUP_MENU_VIEW,
+  PUGL_TOOLTIP_VIEW,
+  PUGL_NOTIFICATION_VIEW,
+  PUGL_COMBO_VIEW,
+  PUGL_DND_VIEW,
+  PUGL_NORMAL_VIEW
+} PuglViewType;
+
 /// A hint for configuring a view
 typedef enum {
   PUGL_USE_COMPAT_PROFILE,    ///< Use compatible (not core) OpenGL profile
@@ -859,6 +877,7 @@ typedef enum {
   PUGL_RESIZABLE,             ///< True if view should be resizable
   PUGL_IGNORE_KEY_REPEAT,     ///< True if key repeat events are ignored
   PUGL_REFRESH_RATE,          ///< Refresh rate in Hz
+  PUGL_VIEW_TYPE              ///< Type of view to realize
 } PuglViewHint;
 
 /// The number of #PuglViewHint values

@@ -168,6 +168,37 @@ puglInitWorldInternals(const PuglWorldType type, const PuglWorldFlags flags)
   impl->atoms.NET_WM_STATE_HIDDEN =
     XInternAtom(display, "_NET_WM_STATE_HIDDEN", 0);
 
+  impl->atoms.NET_WM_WINDOW_TYPE =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_DESKTOP =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DESKTOP", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_DOCK =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DOCK", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_TOOLBAR =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLBAR", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_MENU =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_MENU", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_UTILITY =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_SPLASH =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_SPLASH", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_DIALOG =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DIALOG", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_DROPDOWN_MENU =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_POPUP_MENU =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_POPUP_MENU", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_TOOLTIP =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_TOOLTIP", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_NOTIFICATION =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_NOTIFICATION", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_COMBO =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_COMBO", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_DND =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_DND", 0);
+  impl->atoms.NET_WM_WINDOW_TYPE_NORMAL =
+    XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", 0);
+
   impl->atoms.TARGETS       = XInternAtom(display, "TARGETS", 0);
   impl->atoms.text_uri_list = XInternAtom(display, "text/uri-list", 0);
 
@@ -309,6 +340,77 @@ updateSizeHints(const PuglView* const view)
   return PUGL_SUCCESS;
 }
 
+static PuglStatus
+updateViewType(const PuglView* const view)
+{
+  if (!view->impl->win) {
+    return PUGL_SUCCESS;
+  }
+
+  PuglX11Atoms* const atoms      = &view->world->impl->atoms;
+  Display* const      display    = view->world->impl->display;
+  unsigned char*      windowType = NULL;
+
+  switch (view->hints[PUGL_VIEW_TYPE]) {
+  case PUGL_DESKTOP_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_DESKTOP;
+    break;
+  case PUGL_DOCK_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_DOCK;
+    break;
+  case PUGL_TOOLBAR_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_TOOLBAR;
+    break;
+  case PUGL_MENU_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_MENU;
+    break;
+  case PUGL_UTILITY_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_UTILITY;
+    break;
+  case PUGL_SPLASH_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_SPLASH;
+    break;
+  case PUGL_DIALOG_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_DIALOG;
+    break;
+  case PUGL_DROPDOWN_MENU_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_DROPDOWN_MENU;
+    break;
+  case PUGL_POPUP_MENU_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_POPUP_MENU;
+    break;
+  case PUGL_TOOLTIP_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_TOOLTIP;
+    break;
+  case PUGL_NOTIFICATION_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_NOTIFICATION;
+    break;
+  case PUGL_COMBO_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_COMBO;
+    break;
+  case PUGL_DND_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_DND;
+    break;
+  case PUGL_NORMAL_VIEW:
+    windowType = (unsigned char*)&atoms->NET_WM_WINDOW_TYPE_NORMAL;
+    break;
+  }
+
+  int code = Success;
+  if (windowType != NULL) {
+    code = XChangeProperty(display,
+                           view->impl->win,
+                           atoms->NET_WM_WINDOW_TYPE,
+                           XA_ATOM,
+                           32,
+                           PropModeReplace,
+                           windowType,
+                           1);
+  }
+
+  return code == Success ? PUGL_SUCCESS : PUGL_BAD_CONFIGURATION;
+}
+
 #ifdef HAVE_XCURSOR
 static PuglStatus
 defineCursorName(PuglView* const view, const char* const name)
@@ -410,6 +512,15 @@ puglRealize(PuglView* const view)
   attr.event_mask |= StructureNotifyMask;
   attr.event_mask |= VisibilityChangeMask;
 
+  attr.override_redirect =
+    (int)(view->hints[PUGL_VIEW_TYPE] == PUGL_TOOLBAR_VIEW ||
+          view->hints[PUGL_VIEW_TYPE] == PUGL_DROPDOWN_MENU_VIEW ||
+          view->hints[PUGL_VIEW_TYPE] == PUGL_POPUP_MENU_VIEW ||
+          view->hints[PUGL_VIEW_TYPE] == PUGL_TOOLTIP_VIEW ||
+          view->hints[PUGL_VIEW_TYPE] == PUGL_NOTIFICATION_VIEW ||
+          view->hints[PUGL_VIEW_TYPE] == PUGL_COMBO_VIEW ||
+          view->hints[PUGL_VIEW_TYPE] == PUGL_DND_VIEW);
+
   // Create the window
   impl->win = XCreateWindow(display,
                             parent,
@@ -457,6 +568,8 @@ puglRealize(PuglView* const view)
   if (view->transientParent) {
     XSetTransientForHint(display, impl->win, (Window)view->transientParent);
   }
+
+  updateViewType(view);
 
   // Create input context
   if (world->impl->xim) {
@@ -879,7 +992,7 @@ translateEvent(PuglView* const view, XEvent xevent)
       }
     } else if (xevent.xbutton.button < 4 || xevent.xbutton.button > 7) {
       event.button.type   = ((xevent.type == ButtonPress) ? PUGL_BUTTON_PRESS
-                                                          : PUGL_BUTTON_RELEASE);
+                                                        : PUGL_BUTTON_RELEASE);
       event.button.time   = (double)xevent.xbutton.time / 1e3;
       event.button.x      = xevent.xbutton.x;
       event.button.y      = xevent.xbutton.y;
