@@ -86,18 +86,17 @@ puglMacCairoEnter(PuglView* view, const PuglExposeEvent* expose)
   assert(!drawView->surface);
   assert(!drawView->cr);
 
-  const double scale = 1.0 / [[NSScreen mainScreen] backingScaleFactor];
+  const double invScaleFactor = 1.0 / [[NSScreen mainScreen] backingScaleFactor];
+
   CGContextRef context =
     (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
 
   const CGSize sizePx = {(CGFloat)view->lastConfigure.width,
                          (CGFloat)view->lastConfigure.height};
 
-  const CGSize sizePt = CGContextConvertSizeToUserSpace(context, sizePx);
-
   // Convert coordinates to standard Cairo space
-  CGContextTranslateCTM(context, 0.0, sizePt.height);
-  CGContextScaleCTM(context, scale, -scale);
+  CGContextTranslateCTM(context, 0.0, sizePx.height * invScaleFactor);
+  CGContextScaleCTM(context, invScaleFactor, -invScaleFactor);
 
   drawView->surface = cairo_quartz_surface_create_for_cg_context(
     context, (unsigned)sizePx.width, (unsigned)sizePx.height);
